@@ -37,7 +37,7 @@ Docker-compose up the service with:
 ### Available CRUD Operations
 
     GET /personas
-        returns all entities sorted by optional query param 'sort'
+        returns all personas sorted by optional query param 'sort'
 
     GET /:id
         return persona of given type with given mongo id
@@ -64,10 +64,10 @@ Docker-compose up the service with:
         delete persona by id
 
     DELETE /:entityId/:field
-        delete entity field
+        delete persona field
 
     DELETE /:entityId/:field/:elementId
-        delete entity array field element
+        delete persona array field element
 
 ### Persona Data Model
 
