@@ -36,45 +36,45 @@ Docker-compose up the service with:
 
 ### Available CRUD Operations
 
-GET /personas
-    returns all entities sorted by optional query param 'sort'
+    GET /personas
+        returns all entities sorted by optional query param 'sort'
 
-GET /:id
-    return persona of given type with given mongo id
-  
-GET /:id/weights
-    return persona of given type with given mongo id
+    GET /:id
+        return persona of given type with given mongo id
 
-POST 
-    Adds persona specified in req, returns object as serialized json 
+    GET /:id/weights
+        return persona of given type with given mongo id
 
-POST /:fromPersonaId/addConnection w/ body = {payload:{toPersonaId}}
-    Adds connection from fromPersonaId to toPersonaId specified in body
+    POST 
+        Adds persona specified in req, returns object as serialized json 
 
-POST /:id/:field
-    update a top-level field w/ request given mongo id
+    POST /:fromPersonaId/addConnection w/ body = {payload:{toPersonaId}}
+        Adds connection from fromPersonaId to toPersonaId specified in body
 
-POST /getBatchInfo
-    POST a list of batch requests for persona info
+    POST /:id/:field
+        update a top-level field w/ request given mongo id
 
-PUT /:id/:field
-    update a top-level field w/ request given mongo id
+    POST /getBatchInfo
+        POST a list of batch requests for persona info
 
-DELETE /:personaId 
-    delete persona by id
+    PUT /:id/:field
+        update a top-level field w/ request given mongo id
 
-DELETE /:entityId/:field
-    delete entity field
+    DELETE /:personaId 
+        delete persona by id
 
-DELETE /:entityId/:field/:elementId
-    delete entity array field element
+    DELETE /:entityId/:field
+        delete entity field
+
+    DELETE /:entityId/:field/:elementId
+        delete entity array field element
 
 ### Persona Data Model
 
-persona:
-    names: [Name],
-    socialProfiles: [SocialProfile],
-    weights: [Weights],
+    persona
+        names: [Name],
+        socialProfiles: [SocialProfile],
+        weights: [Weights],
 
     Name
         primary: Boolean, // enforce only one primary
