@@ -14,7 +14,7 @@ function createConnectionString() {
   const host = process.env.MONGO_HOST || 'localhost';
   const port = process.env.MONGO_PORT || 27017;
   const database = process.env.MONGO_DATABASE || 'emu'; // register schemas with mongoose
-  return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${database}?authSource=admin`;
+  return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${database}?authSource=emu`;
 }
 
 async function connectDatabase() {
