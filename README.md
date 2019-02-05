@@ -20,9 +20,9 @@ Install the node deps with:
 
 You can run the app in watch mode with:
 
-`sudo docker-compose -f docker-compose.dev.yml build`
+`sudo docker-compose -f docker-compose.yml build`
 
-`sudo docker-compose -f docker-compose.dev.yml up`
+`sudo docker-compose -f docker-compose.yml up`
 
 ### Consumption
 
