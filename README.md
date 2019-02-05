@@ -73,8 +73,7 @@ Docker-compose up the service with:
 
     persona
         names: [Name],
-        socialProfiles: [SocialProfile],
-        weights: [Weights],
+        socialProfiles:weights: {SocialProfile: weights}
 
     Name
         primary: Boolean, // enforce only one primary
