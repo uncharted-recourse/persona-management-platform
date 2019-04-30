@@ -1,18 +1,5 @@
 const eventHandler = require('./event-handler');
 
-/* const {
-  initSocialConsumer,
-  addPersonIfNotExists,
-} = require('./social-update-consumer');
-
-const {
-  publishEntityUpdate,
-  publishEntityView,
-  sanitizeDocument,
-  initUpdateProducer,
-  capitalizeFirstLetter,
-} = require('./entity-update-producer'); */
-
 const { connectDatabase, createConnectionString } = require('./connect-database');
 
 const {
@@ -31,11 +18,9 @@ const {
 } = require('./route-controller');
 
 module.exports = {
-  //addPersonIfNotExists,
   addPersona,
   addPersonaConnection,
   addFieldOrElement,
-  //capitalizeFirstLetter,
   connectDatabase,
   createConnectionString,
   deleteArrayElement,
@@ -46,11 +31,6 @@ module.exports = {
   getAllPersonas,
   getBatchInfoById,
   getPersona,
-  //initSocialConsumer,
-  //initUpdateProducer,
   isNewSocialProfile,
-  //publishEntityUpdate,
-  //publishEntityView,
-  //sanitizeDocument,
   publishNewEntity,
 };

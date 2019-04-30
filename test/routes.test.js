@@ -4,8 +4,11 @@ const chaiHttp = require('chai-http');
 //const { seedDatabase, initServer } = require('../utils/seed');
 const { getAllPersonas } = require('../controllers');
 const _ = require('lodash');
+const mongoose = require('mongoose');
 const {
   createName,
+  createSocialProfile,
+  createPersona, 
   typeToCreateFunc,
   comparePersonas,
   sleep,
@@ -14,10 +17,7 @@ const {
 chai.use(chaiHttp);
 chai.should();
 
-const types = Object.keys(typeToCreateFunc);
-const typesAndPlurals = types.concat(types.map(t => t + 's'));
-
-for (const type of types) typeToCreateFunc[type + 's'] = typeToCreateFunc[type];
+const type = 'persona'
 
 describe('Routing \n\n', function () {
 
@@ -47,15 +47,16 @@ describe('Routing \n\n', function () {
     res.text.should.equal('Persona Management Platform');
   });
 
-  // router.get(`/personas`, catchReqError(getAllPersonas));  // GET all personas of all types
+  // router.get(`/personas`, catchReqError(getAllPersonas));  // GET all personas of all type
   it("should be able to make get req to '/personas' and get a list of all personas, sorted", async function () {
+    console.log('running get all personas test')
     const res = await chai.request(app).get('/personas?sort=createdAt');
     res.should.have.status(200);
 
     const personas = JSON.parse(res.text);
-    personas.should.have.length(types.length * seedNumPerType);
+    personas.should.have.length(seedNumPerType);
 
-    (new Set(personas.map(e => e.type))).size.should.equal(types.length); // should include all persona types
+    (new Set(personas.map(e => e.type))).size.should.equal(1); // should include all persona type
 
     const sorted = _.sortBy(personas, e => e.createdAt);
     _.isEqual(personas, sorted).should.be.true;
@@ -64,26 +65,52 @@ describe('Routing \n\n', function () {
   // router.get(`/:id`, catchReqError(getPersonaById)); // GET a single persona by mongo _id
   it("should be able to make get req to '/:id' and get the persona identified", async function () {
     async function testGetPersonaById(type) {
-      const personas = JSON.parse((await chai.request(app).get(`/${type}`)).text);
+      console.log('running get individual persona by id test')
+      const personas = JSON.parse((await chai.request(app).get(`/${type + 's'}`)).text);
       const selected = _.sample(personas);
       const res = await chai.request(app).get(`/${selected._id}`);
       res.should.have.status(200);
       const returned = JSON.parse(res.text);
       _.isEqual(returned, selected).should.be.true;
     }
-    for (const t of typesAndPlurals) testGetPersonaById(t);
+    await testGetPersonaById(type);
+  });
+
+  // router.get(`/:id/:element_id/weights`, catchReqError(getPersonaWeights)); // GET a single persona's weights by mongo _id and element_id
+  it("should be able to make get req to '/:id/:element_id/weights' and get the weights of the persona's socialProfile identified", async function () {
+    async function testGetWeightsById(type) {
+      console.log('running get weights by mongo_id and element_id test')
+      const personas = JSON.parse((await chai.request(app).get(`/${type + 's'}`)).text);
+      const selected = _.sample(personas);
+      const socialProfile = _.sample(selected.socialProfiles)
+      const res = await chai.request(app).get(`/${selected._id}/${socialProfile._id}/weights`);
+      res.should.have.status(200);
+      const returned = JSON.parse(res.text);
+      _.isEqual(returned, socialProfile).should.be.true;
+    }
+    await testGetWeightsById(type);
   });
 
   // router.post(``, catchReqError(addPersona)); // POST a new persona 
   it("should be able to make post req to '' and add a persona", async function () {
     async function testAddPersona(type) {
-      const newPersona = typeToCreateFunc[type]();
+      console.log('running post new persona test')
+      const newPersona = mongoose.model(type)();
       const res = await chai.request(app).post(``).send({ json: JSON.stringify(newPersona) });
       res.should.have.status(200);
       const returned = JSON.parse(res.text);
-      comparePersonas(newPersona, returned).should.be.true;
+      (newPersona._id == returned._id).should.be.true;
+      for (var i = 0; i < newPersona.connections.length; i++) {
+        (newPersona.connections[i] == returned.connections[i]).should.be.true;
+      }
+      for (var i = 0; i < newPersona.socialProfiles.length; i++) {
+        (newPersona.socialProfiles[i] == returned.socialProfiles[i]).should.be.true;
+      }
+      for (var i = 0; i < newPersona.names.length; i++) {
+        (newPersona.names[i] == returned.names[i]).should.be.true;
+      }
     };
-    for (const t of typesAndPlurals) await testAddPersona(t);
+    await testAddPersona(type);
   });
 
   async function addPersona(persona) {
@@ -100,7 +127,8 @@ describe('Routing \n\n', function () {
   it("should be able to make post req to '/:fromEntityId/addConnection' to add a connection between two personas", async function () {
 
     async function testAddConnection(fromPersona, type) {
-      const toPersona = await addPersona(typeToCreateFunc[type]());
+      console.log('test adding connection between personas')
+      const toPersona = await addPersona(mongoose.model(type)());
       const body = {
         json: JSON.stringify({toEntityId: toPersona._id }),
       };
@@ -109,61 +137,25 @@ describe('Routing \n\n', function () {
       // const fromPersonaAfter = await getEntity(fromPersona._id);
 
       const connections = fromPersonaAfter.connections;
-      const connIndex = connections.findIndex(c => (c.toPersonaId == toPersona._id));
+      const connIndex = connections.findIndex(c => (c.toEntityId == toPersona._id));
       connIndex.should.not.equal(-1);
       const connection = connections[connIndex];
-      connection.should.include({ toPersonaId: toPersona._id });
+      connection.should.include({ toEntityId: toPersona._id });
     };
 
-    for (const fromType of types) {
-      const fromPersona = await addPersona(typeToCreateFunc[fromType]());
-      for (const type of types) await testAddConnection(fromPersona, type);
+    for (const fromType of type) {
+      const fromPersona = await addPersona(mongoose.model(type)());
+      await testAddConnection(fromPersona, type);
     }
   });
-
-  /* it.only("should be able to make a batch id info req using the body of a POST", async function () {
-
-    async function testBatchReq(props) {
-      const batchRequest = {};
-      for (const type of types) {
-        // select a random subset of personas of that type, add their ids as 
-        if (Array.isArray(props) || props[type]) {
-          batchRequest[type] = {
-            props: props[type] || props,
-            ids: (await getAllPersonas())
-              .filter(e => _.random(0, 1))
-              .map(e => String(e._id)) // convert to string else id is object (?)
-          };
-        }
-      }
-
-      const reqTypes = Object.keys(batchRequest);
-
-      const batchResponse = (await chai.request(app).post(`/getBatchInfo`).send({ payload: batchRequest })).body;
-      Object.keys(batchResponse).should.have.members(reqTypes); // response is indexed by type
-
-      for (const type in batchResponse) {
-        const resIds = Object.keys(batchResponse[type]);
-        resIds.should.have.members(batchRequest[type].ids); // type's response should include the personas with the ids given for that type
-        for (const id of resIds) {
-          const resEnt = batchResponse[type][id];
-          Object.keys(resEnt).should.deep.equal(props[type] || props); // each persona should have the requested props
-        }
-      }
-    }
-
-    // should accept an array of props or a mapping from entity types to props array
-    const testProps = ['names']
-    await testBatchReq(testProps);
-    await testBatchReq({ 'person': [...testProps, 'socialProfiles']});
-  }); */
 
   ///// NOTE: tests below are not up to date
 
   // router.post(`/:id/:field`, catchReqError(addPersonaField)); // POST a new element to top-level field or add element to and array-field of persona
   it("should be able to make post req to '/:id/:field' where field is an arrayField and add an element to the array", async function () {
     const testAddArrayField = async (type, primary) => {
-      const persona = typeToCreateFunc[type]();
+      console.log('running test to add element to an array-field')
+      const persona = mongoose.model(type)();
       const resBefore = await chai.request(app).post(``).send({
         persona,
       });
@@ -179,13 +171,14 @@ describe('Routing \n\n', function () {
       comparePersonas(newName, arrayName).should.be.true;
     };
     for (const primary of [true, false]) {
-      for (const t of types) testAddArrayField(t, primary);
+      testAddArrayField(type, primary);
     }
   });
 
   // router.post(`/:id/:field`, catchReqError(addPersonaField)); // POST a new element to top-level field or add element to and array-field of persona
   it("should be able to make post req to '/:id/:field' where field is top-level and set that field", async function () {
     const testAddField = async (type, preExists) => {
+      console.log('running test to add an array-field')
       let persona = (preExists) ? { rfi: 'not cool :(' } : {};
       const resBefore = await chai.request(app).post(``).send(persona);
       const personaBefore = JSON.parse(resBefore.text);
@@ -199,126 +192,72 @@ describe('Routing \n\n', function () {
       personaAfter.rfi.should.equal(newRfi);
     };
     for (const preExists of [true, false]) {
-      for (const t of types) testAddField(t, preExists);
+      testAddField(type, preExists);
     }
-  });
-
-  // router.put(`/:id`, catchReqError(updatePersonaById));
-  it("should be able to make put req to '/:id' and update that persona", async function () {
-    const testUpdatePersona = async (type) => {
-      const pers = typeToCreateFunc[type]();
-      const res = await chai.request(app).post(``).send(pers);
-      const persona = JSON.parse(res.text);
-      comparePersonas(pers, persona).should.be.true;
-
-      const update = typeToCreateFunc[type]();
-      const updateRes = await chai.request(app).put(`/${persona._id}`).send(update);
-      const updatePersona = JSON.parse(updateRes.text);
-      comparePersonas(update, updatePersona).should.be.true;
-      comparePersonas(persona, updatePersona).should.be.false;
-    };
-    for (const t of types) testUpdatePersona(t);
   });
 
   // router.put(`/:id/:field`, catchReqError(updatePersonaField)); 
   it("should be able to make a put request to '/:id/:field' and update a top-level field", async function () {
     const testUpdatePersonaField = async (type) => {
-      const pers = typeToCreateFunc[type]();
+      console.log('running test to update field of persona')
+      const pers = mongoose.model(type)();
       const res = await chai.request(app).post(``).send(pers);
       const persona = JSON.parse(res.text);
-      comparePersonas(pers, persona).should.be.true;
+      (pers._id == persona._id).should.be.true;
+      for (var i = 0; i < pers.connections.length; i++) {
+        (pers.connections[i] == persona.connections[i]).should.be.true;
+      }
+      for (var i = 0; i < pers.socialProfiles.length; i++) {
+        (pers.socialProfiles[i] == persona.socialProfiles[i]).should.be.true;
+      }
+      for (var i = 0; i < pers.names.length; i++) {
+        (pers.names[i] == persona.names[i]).should.be.true;
+      }
 
-      const update = { rfi: 'super cool!' };
-      const updateRes = await chai.request(app).put(`/${persona._id}/rfi`).send(update);
+      const update = { names: createName() };
+      const updateRes = await chai.request(app).put(`/${persona._id}/names`).send(update);
       const updatePersona = JSON.parse(updateRes.text);
-      update.rfi.should.equal(updatePersona.rfi);
-      update.rfi.should.not.equal(persona.rfi);
+      update.names.firstName.should.equal(updatePersona.names[0].firstName);
+      update.names.middleName.should.equal(updatePersona.names[0].middleName);
+      update.names.lastName.should.equal(updatePersona.names[0].lastName);
+      update.names.should.not.equal(persona.names);
     };
-    for (const t of types) testUpdatePersonaField(t);
-  });
-
-  // router.put(`/:id/:field/:elementId`, catchReqError(updatePersonaFieldMember)); // TODO
-  it("should be able to make a put request to '/:id/:arrayField' and update an array element", async function () {
-    const testUpdatePersonaArrayField = async (type) => {
-      const pers = typeToCreateFunc[type]();
-      const res = await chai.request(app).post(``).send(pers);
-      const persona = JSON.parse(res.text);
-      comparePersonas(pers, persona).should.be.true;
-
-      const i = _.random(0, persona.names.length - 1);
-      const uid = persona.names[i]._id;
-
-      const updatedName = createName(i == 0); // primary name if i = 0
-      const updateRes = await chai.request(app).put(`/${persona._id}/names/${uid}`).send(updatedName);
-      const updatedPersona = JSON.parse(updateRes.text);
-
-      comparePersonas(updatedName, updatedPersona.names[i]).should.be.true;
-
-      comparePersonas(updatedName, persona.names[i]).should.be.false;
-      (updatedPersona.names[i]._id == uid).should.be.true;
-
-    };
-    for (const t of types) testUpdatePersonaArrayField(t);
+    testUpdatePersonaField(type);
   });
 
   // /:id/:field - delete persona field
   it("should be able to make a delete request to '/:id/:field' and delete that field", async function () {
     const testDeleteField = async (type) => {
-      const pers = typeToCreateFunc[type]();
+      console.log('running test to delete persona field')
+      const pers = mongoose.model(type)();
       const res = await chai.request(app).post(``).send(pers);
       const persona = JSON.parse(res.text);
 
-      const response = await chai.request(app).delete(`/${persona._id}/rfi`);
+      const response = await chai.request(app).delete(`/${persona._id}/weights`);
       const retPersona = JSON.parse(response.text);
       assert(retPersona.rfi == undefined);
       comparePersonas(retPersona, persona).should.be.true;
     };
-    for (const t of types) testDeleteField(t);
+    testDeleteField(type);
   });
 
   // /:id/:field/:elementId - delete persona array field member
   it("should be able to make a delete request to '/:id/:field/:elementId' and remove that element from an array field", async function () {
     const testDeleteElement = async (type) => {
-      const pers = typeToCreateFunc[type]();
+      console.log('running test to delete persona array field')
+      var pers = mongoose.model(type)();
       const res = await chai.request(app).post(``).send(pers);
       const persona = JSON.parse(res.text);
-
-      const removeId = persona.names[0]._id;
-      const response = await chai.request(app).delete(`/${persona._id}/names/${removeId}`);
+      const update = { names: createName() };
+      const updateRes = await chai.request(app).put(`/${persona._id}/names`).send(update);
+      const updatePersona = JSON.parse(updateRes.text);
+      const removeId = updatePersona.names[0]._id;
+      const response = await chai.request(app).delete(`/${updatePersona._id}/names/${removeId}`);
       const retPersona = JSON.parse(response.text);
       const ids = retPersona.names.map(n => n._id);
       ids.includes(removeId).should.be.false;
     };
-    for (const t of types) testDeleteElement(t);
+    testDeleteElement(type);
   });
-
-/*   it('should be able to recognize a new social profile', async function () {
-    // make sure no entity has this social profile
-    const { isNewSocialProfile, addPersonIfNotExists } = require('../controllers/socialUpdateListener');
-
-    const username = Date.now().toString();
-    const isNew = await isNewSocialProfile(username, 'twitter');
-    isNew.should.equal(true);
-
-    // have to do this twice to make sure both are added
-    await addPersonIfNotExists({
-      authorScreenName: username,
-      authorProfileUrl: 'glarb',
-      platform: 'twitter',
-      parentScreenName: 'test_target',
-      parentProfileUrl: 'glarb2'
-    });
-
-    await addPersonIfNotExists({
-      authorScreenName: username,
-      authorProfileUrl: 'glarb',
-      platform: 'twitter',
-      parentScreenName: 'test_target',
-      parentProfileUrl: 'glarb2'
-    });
-
-    const isNewNow = await isNewSocialProfile(username, 'twitter');
-    isNewNow.should.equal(false);
-  }); */
 
 });

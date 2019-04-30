@@ -17,10 +17,6 @@ exports.Name = new mongoose.Schema({
   fullName: String,
 }, { strict });
 exports.Name.plugin(composeFullName);
-/* exports.Name.plugin(setSanitized, { sanitizeFunction: doc => doc.fullName });
-exports.Name.methods.sanitize = function () {
-  return this.fullName;
-}; */
 
 exports.Address = new mongoose.Schema({
   sanitized: Object,
@@ -56,23 +52,10 @@ exports.SocialProfile = new mongoose.Schema({
   sanitized: Object,
   name: { type: String, trim: true },
   url: { type: String, trim: true },
+  filename: {type: String, trim: true},
   type: { type: String, trim: true },
   collect: { type: Boolean, default: true, index: true },
 }, { strict });
-//exports.SocialProfile.plugin(setSanitized, { sanitizeFunction: doc => _.pick(doc, ['name', 'url', 'type', 'collect']) });
-//exports.SocialProfile.methods.sanitize = function () {
-//  return _.pick(this, ['name', 'url', 'type', 'collect']);
-//};
-
-exports.Weights = new mongoose.Schema({
-  sanitized: Object,
-  filename: {type: String, trim: true},
-  type: {type: String, trim: true},
-}, { strict });
-/* exports.Weights.plugin(setSanitized, { sanitizeFunction: doc => _.pick(doc, ['filename', 'type']) });
-exports.SocialProfile.methods.sanitize = function() {
-  return _.pick(this, ['filename', 'type']);
-}; */
 
 exports.PhoneNumber = new mongoose.Schema({
   sanitized: Object,

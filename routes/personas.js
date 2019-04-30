@@ -24,7 +24,7 @@ const router = express.Router();
 
 router.get(`/personas`, catchReqError(reqAllPersonas)); // GET all personas of all types
 router.get(`/:personaId`, catchReqError(reqPersona)); // GET a single persona by mongo _id
-router.get(`/:personaId/weights`, catchReqError(reqPersonaWeights));// GET a single persona's weights by mongo _id
+router.get(`/:personaId/:elementId/weights`, catchReqError(reqPersonaWeights));// GET a single persona's socialProfiles weights by mongo _id and element _id
 
 router.post('/getBatchInfo', catchReqError(reqBatchInfo)); // POST a list of batch requests for persona info
 
@@ -55,7 +55,6 @@ async function reqAllPersonas(req, res) {
 // GET /:id
 async function reqPersona(req, res) {
   /* return persona of given type with given mongo id */
-  // if (!req.body.user) return Promise.reject(new InvalidRequestError('Missing user property in request body'));
   const persona = await getPersona(
     req.params.personaId);
   return res.json(persona);
@@ -64,10 +63,9 @@ async function reqPersona(req, res) {
 // GET /:id/weights
 async function reqPersonaWeights(req, res) {
   /* return persona of given type with given mongo id */
-  // if (!req.body.user) return Promise.reject(new InvalidRequestError('Missing user property in request body'));
   const persona = await getPersonaWeights(
-    req.params.personaId);
-    //req.body.user);
+    req.params.personaId,
+    req.params.elementId);
   return res.json(persona);
 };
 
@@ -77,7 +75,6 @@ async function reqAddPersona(req, res) {
   checkBody(req).catch(err => Promise.reject(err));
   const persona = await addPersona(
     unpackBody(req));
-    //req.body.user);
   return res.json(persona);
 };
 
@@ -87,7 +84,6 @@ async function reqAddPersonaConnection(req, res) {
   const fromPersona = await addPersonaConnection(
     req.params.fromPersonaId,
     unpackBody(req),
-    //req.body.user,
   );
   return res.json(fromPersona);
 };
@@ -99,7 +95,6 @@ async function reqAddFieldOrElement(req, res) {
     req.params.personaId,
     req.params.field,
     unpackBody(req),
-    //req.body.user,
   );
   res.json(persona);
 }
@@ -112,40 +107,33 @@ async function reqEditField(req, res) {
     req.params.personaId,
     req.params.field,
     unpackBody(req),
-    //req.body.user,
   );
   return res.json(persona);
 };
 
 // DELETE /:personaId  - delete persona by id
 async function reqDeletePersona(req, res) {
-  //if (!req.body.user) return Promise.reject(new InvalidRequestError('Missing user property in request body'));
   const persona = await deletePersona(
     req.params.personaId,
-    //req.body.user,
   );
   return res.json(persona);
 }
 
 // DELETE /:entityId/:field - delete entity field
 async function reqDeleteField(req, res) {
-  //if (!req.body.user) return Promise.reject(new InvalidRequestError('Missing user property in request body'));
   const persona = await deleteField(
     req.params.personaId,
     req.params.field,
-    //req.body.user,
   );
   return res.json(persona);
 }
 
 // DELETE /:entityId/:field/:elementId - delete entity array field element
 async function reqDeleteArrayElement(req, res) {
-  //if (!req.body.user) return Promise.reject(new InvalidRequestError('Missing user property in request body'));
   const persona = await deleteArrayElement(
     req.params.personaId,
     req.params.field,
     req.params.elementId,
-    //req.body.user
   );
   return res.json(persona);
 }

@@ -3,6 +3,9 @@ const moment = require('moment');
 const {
   createName,
   typeToCreateFunc
+} = require('../utils/create-components');
+const {
+  createPersona,
 } = require('../utils/create-entities');
 
 const compareTimes = (string1, string2) => {
@@ -27,7 +30,6 @@ const compareElements = (el1, el2) => {
 };
 
 const comparePersonas = (sent, retr) => {
-
   if (_.isEqual(sent, retr)) return true;
 
   const personaKeys = Object.keys(sent);

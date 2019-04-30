@@ -7,7 +7,7 @@ services:
 
   emu:
     build: .
-    command: npm start
+    command: npm test 
     depends_on:
       - entity-db
     environment: 

@@ -14,7 +14,7 @@ function createConnectionString() {
   const host = process.env.MONGO_HOST || 'localhost';
   const port = process.env.MONGO_PORT || 27017;
   const database = process.env.MONGO_DATABASE || 'emu'; // register schemas with mongoose
-  return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${database}?authSource=emu`;
+  return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${database}?authSource=admin`;
 }
 
 async function connectDatabase() {
@@ -34,8 +34,7 @@ async function connectDatabase() {
 async function resetModel() {
   // check if old models are already registered, if so delete, then register
   // once registered models can be accessed w/ Entity = mongoose.model('Entity'); ent = new Entity()
-  console.log('resetting models');
-  const models = {
+    const models = {
     persona: personaSchema,
     connection: connectionSchema
   };

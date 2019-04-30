@@ -42,8 +42,8 @@ Docker-compose up the service with:
     GET /:id
         return persona of given type with given mongo id
 
-    GET /:id/weights
-        return persona of given type with given mongo id
+    GET /:id/:element_id/weights
+        return weights of persona with mongo id and socialProfile with element_id
 
     POST 
         Adds persona specified in req, returns object as serialized json 
@@ -73,7 +73,7 @@ Docker-compose up the service with:
 
     persona
         names: [Name],
-        socialProfiles:weights: {SocialProfile: weights}
+        socialProfiles [SocialProfiles]
 
     Name
         primary: Boolean, // enforce only one primary
@@ -86,9 +86,6 @@ Docker-compose up the service with:
         name: String
         url: String
         type: String, i.e. Twitter, Facebook, Reddit, Instagram, Email, etc
+        filename: String // contains the weights for this social profile
         collect: Boolean
-
-    Weights
-        filename: String 
-        type: String, i.e. 'h5'
 
